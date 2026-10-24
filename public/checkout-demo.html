@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Razorpay Checkout Demo</title>
+  <style>
+    body{font-family:system-ui,sans-serif;max-width:480px;margin:40px auto;padding:0 16px}
+    input,button{width:100%;padding:10px;margin:6px 0;font-size:16px;box-sizing:border-box}
+    pre{background:#f4f4f4;padding:12px;overflow:auto;font-size:13px}
+  </style>
+</head>
+<body>
+  <h2>Razorpay Checkout Demo</h2>
+  <p>1) Register/login via the API and paste the token below.</p>
+  <input id="token" placeholder="Bearer token (Sanctum)">
+  <input id="amount" type="number" value="499" placeholder="Amount in INR">
+  <button id="pay">Pay now</button>
+  <pre id="log">Ready.</pre>
+
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+  <script>
+    const log = (m) => document.getElementById('log').textContent = typeof m === 'string' ? m : JSON.stringify(m, null, 2);
+    const api = (path, body) => fetch('/api/v1' + path, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json','Accept':'application/json',
+                'Authorization':'Bearer ' + document.getElementById('token').value.trim()},
+      body: JSON.stringify(body)
+    }).then(async r => ({ok:r.ok, body: await r.json()}));
+
+    document.getElementById('pay').onclick = async () => {
+      const res = await api('/payments/orders', {amount: Number(document.getElementById('amount').value), description: 'Demo order'});
+      if (!res.ok) return log(res.body);
+      const d = res.body.data;
+
+      new Razorpay({
+        key: d.key_id, order_id: d.order_id, amount: d.amount, currency: d.currency, name: 'Demo Store',
+        handler: async (resp) => log(await api('/payments/verify', resp).then(r => r.body)),
+        modal: { ondismiss: () => log('Checkout closed.') }
+      }).open();
+    };
+  </script>
+</body>
+</html>
