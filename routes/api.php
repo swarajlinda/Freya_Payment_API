@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\DoctorScheduleController;
 use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\WebhookController;
 use App\Http\Middleware\EnsureAdminKey;
@@ -24,6 +25,9 @@ Route::prefix('v1')->group(function () {
         Route::post('payments/verify', [PaymentController::class, 'verify'])->middleware('throttle:30,1');
         Route::get('payments', [PaymentController::class, 'index']);
         Route::get('payments/{id}', [PaymentController::class, 'show'])->whereNumber('id');
+
+        // Doctor Schedule
+        Route::get('/doctor-schedules', [DoctorScheduleController::class, 'index']);
     });
 
     // ---- Admin endpoints (X-Admin-Key header) ----
