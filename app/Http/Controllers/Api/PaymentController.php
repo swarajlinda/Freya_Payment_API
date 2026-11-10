@@ -38,7 +38,6 @@ class PaymentController extends Controller
         }
 
         $payment = Payment::create([
-            'user_id'           => $request->user()->id,
             'receipt'           => $receipt,
             'razorpay_order_id' => $order['id'],
             'amount'            => $amount,
@@ -66,7 +65,6 @@ class PaymentController extends Controller
         $data = $request->validated();
 
         $payment = Payment::where('razorpay_order_id', $data['razorpay_order_id'])
-            ->where('user_id', $request->user()->id)
             ->first();
 
         if (! $payment) {
@@ -112,7 +110,7 @@ class PaymentController extends Controller
     {
         $request->validate(['status' => ['nullable', 'in:' . implode(',', array_column(PaymentStatus::cases(), 'value'))]]);
 
-        $payments = Payment::where('user_id', $request->user()->id)
+        $payments = Payment::where('razorpay_order_id', $request->razorpay_order_id)
             ->when($request->query('status'), fn($q, $s) => $q->where('status', $s))
             ->latest()
             ->paginate(min((int) $request->query('per_page', 15), 100));
@@ -124,7 +122,7 @@ class PaymentController extends Controller
     public function show(Request $request, int $id): PaymentResource
     {
         $payment = Payment::with('refunds')
-            ->where('user_id', $request->user()->id)
+            ->where('razorpay_order_id', $request->razorpay_order_id)
             ->findOrFail($id);
 
         return new PaymentResource($payment);
